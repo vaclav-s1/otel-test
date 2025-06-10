@@ -1,0 +1,43 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  groupbyattrs/scan_groups:
+    keys:
+      - bucketId
+      - accountId
+  batch/windowed_scans:
+    timeout: 10s
+    send_batch_size: 1000 # High value to prioritize timeout
+
+connectors:
+  sum/file_scan_sum:
+    datapoints:
+      bucket_account_files_scanned_5m_total:
+        source_attribute: filesScanCount
+        attributes:
+          - key: bucketId
+          - key: accountId
+
+## Exporters just for debugging and file output
+exporters:
+  debug: 
+  file/metrics:
+    path: ./otel-metrics.json
+    format: json
+
+service:
+  pipelines:
+    metrics/source_processing:
+      receivers: [otlp]
+      processors: [groupbyattrs/scan_groups, batch/windowed_scans]
+      exporters: [sum/file_scan_sum, debug, file/metrics]
+
+    metrics/aggregated_export:
+      receivers: [sum/file_scan_sum]
+      exporters: [debug, file/metrics]
