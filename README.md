@@ -1,0 +1,3 @@
+- Testing OTEL grouping and aggregation capabilities
+- `docker compose up` to start OTEL Collector with the config
+- `go run otel-metric-generator.go` 
